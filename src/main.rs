@@ -1,11 +1,15 @@
-use actix_web::{App, HttpServer};
+use std::sync::Arc;
+
+use actix_web::{web, App, HttpServer};
 use config::{database::create_database_pool, redis::create_redis_pool};
 use dotenvy::dotenv;
 use env_logger::Env;
 use log::info;
+use module::notification_service_module::{self, NotiServiceModule};
 use sqlx::migrate;
 
 mod config;
+mod module;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -30,11 +34,18 @@ async fn main() -> std::io::Result<()> {
     migrator.run(&pg_pool).await.expect("Migration failed");
     info!("Migration success");
 
+    // init modules
+    let noti_srv_module = NotiServiceModule::new(Arc::new(pg_pool));
+
     info!("Starting server...");
 
-    HttpServer::new(|| App::new())
-        .workers(1)
-        .bind(("localhost", 8080))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(noti_srv_module.noti_controller.clone()))
+            .configure(NotiServiceModule::routes_config)
+    })
+    .workers(1)
+    .bind(("localhost", 8080))?
+    .run()
+    .await
 }
