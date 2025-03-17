@@ -1,0 +1,1 @@
+UPDATE Notification SET STATUS = ? WHERE id = ?;

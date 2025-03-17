@@ -2,14 +2,15 @@ use std::sync::Arc;
 
 use actix_web::web;
 use controllers::notification_controller::NotificationController;
-use repository::notification_repository::NotificationRepo;
+use deadpool_redis::Pool;
+use repository::{notification_repository::NotificationRepo, redis_repository::RedisRepository};
 use services::notification_service::NotificationService;
 use sqlx::PgPool;
 
 pub mod controllers;
+pub mod errors;
 pub mod models;
 pub mod repository;
-pub mod repository_trait;
 pub mod services;
 
 pub struct NotiServiceModule {
@@ -17,13 +18,21 @@ pub struct NotiServiceModule {
 }
 
 impl NotiServiceModule {
-    pub fn new(pool: Arc<PgPool>) -> Self {
-        let noti_repo = NotificationRepo::new(pool);
+    pub fn new(pg_pool: Arc<PgPool>, redis_pool: Arc<Pool>) -> Self {
+        // init repositories
+        let noti_repo = Arc::new(NotificationRepo::new(pg_pool));
+        let redis_repo = Arc::new(RedisRepository::new(redis_pool));
 
-        let noti_service = NotificationService::new(Arc::new(noti_repo));
+        // init services
+        let noti_service = Arc::new(NotificationService::new(
+            noti_repo.clone(),
+            redis_repo.clone(),
+        ));
 
-        let noti_controller = NotificationController::new(Arc::new(noti_service));
+        // init controllers
+        let noti_controller = NotificationController::new(noti_service.clone());
 
+        // generate module
         Self {
             noti_controller: Arc::new(noti_controller),
         }

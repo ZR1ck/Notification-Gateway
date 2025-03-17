@@ -26,6 +26,13 @@ impl NotificationController {
         self_controller: web::Data<Arc<NotificationController>>,
         notification_request: Json<NotificationRequest>,
     ) -> impl Responder {
-        HttpResponse::Ok()
+        match self_controller
+            .noti_service
+            .send(notification_request.0)
+            .await
+        {
+            Ok(response) => return HttpResponse::Ok().json(response),
+            Err(e) => return HttpResponse::from_error(e),
+        };
     }
 }

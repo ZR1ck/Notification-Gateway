@@ -1,7 +1,7 @@
 CREATE TABLE Notification (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
-    recipent TEXT NOT NULL,
+    recipient TEXT NOT NULL,
     channel TEXT CHECK(channel IN('email', 'push', 'sms')),
     template_id UUID,
     status TEXT CHECK(status IN('pending', 'sent', 'faled')),
