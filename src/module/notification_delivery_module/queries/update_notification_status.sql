@@ -1,1 +1,1 @@
-UPDATE Notification SET STATUS = ? WHERE id = ?;
+UPDATE Notification SET status = $1, updated_at = NOW() WHERE id = $2;

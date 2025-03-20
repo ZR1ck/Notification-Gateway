@@ -28,14 +28,18 @@ impl NotificationRepo {
         let stm = include_str!("../queries/insert_noti.sql");
         // bind values
         let user_id = Uuid::parse_str(&notification_request.user_id).unwrap();
-        let template_id = notification_request.template_id.clone().unwrap_or_default();
-        let template_id = Uuid::parse_str(&template_id).unwrap();
+
+        let template_id = notification_request.template_id.clone();
+        let template_id = match template_id {
+            Some(value) => Some(Uuid::parse_str(&value).unwrap()),
+            None => None,
+        };
 
         let result = sqlx::query(stm)
             .bind(uuid)
             .bind(user_id)
             .bind(notification_request.recipient.clone())
-            .bind(notification_request.channel.clone())
+            .bind(notification_request.channel.to_string())
             .bind(template_id)
             .bind("pending".to_string())
             .execute(&*self.pool)

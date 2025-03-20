@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use log::info;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -27,6 +28,9 @@ impl NotificationRepo {
             .execute(&*self.pg_pool)
             .await?;
 
-        Ok(result.rows_affected())
+        let rows_affected = result.rows_affected();
+        info!("Rows affected: {}", rows_affected);
+
+        Ok(rows_affected)
     }
 }

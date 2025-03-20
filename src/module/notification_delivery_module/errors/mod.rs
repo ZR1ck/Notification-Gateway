@@ -18,6 +18,21 @@ pub enum NotiDeliverError {
 
     #[display("Redis pop failed")]
     RedisQueuePopError(RedisError),
+
+    #[display("None value")]
+    NoneValue,
+
+    #[display("Cannot parse this object")]
+    JsonParseError,
+
+    #[display("Cannot send request")]
+    RequestError(reqwest::Error),
+
+    #[display("Google cloud platform authentication")]
+    GCPAuthError(gcp_auth::Error),
+
+    #[display("Request failed")]
+    RequestFailed,
 }
 
 impl ResponseError for NotiDeliverError {
@@ -28,6 +43,10 @@ impl ResponseError for NotiDeliverError {
                 .map_into_boxed_body(),
 
             NotiDeliverError::RedisQueuePopError(_) => HttpResponse::InternalServerError()
+                .body(self.to_string())
+                .map_into_boxed_body(),
+
+            NotiDeliverError::GCPAuthError(_) => HttpResponse::InternalServerError()
                 .body(self.to_string())
                 .map_into_boxed_body(),
 

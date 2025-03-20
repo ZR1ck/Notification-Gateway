@@ -1,10 +1,16 @@
 use std::{env, sync::Arc};
 
 use log::error;
+use serde_json::Value;
 
 use crate::module::notification_service_module::{
     errors::NotiSrvError,
-    models::notification::{NotificationEnQueue, NotificationRequest, NotificationResponse},
+    models::{
+        notification::{
+            NotificationChannel, NotificationEnQueue, NotificationRequest, NotificationResponse,
+        },
+        payload::{EmailPayload, Payload, PushPayload},
+    },
     repository::{notification_repository::NotificationRepo, redis_repository::RedisRepository},
 };
 
@@ -25,7 +31,26 @@ impl NotificationService {
         &self,
         notification_request: NotificationRequest,
     ) -> Result<NotificationResponse, NotiSrvError> {
-        // save notification into database
+        // Validate payload
+        if !self.validate_payload(&notification_request.channel, &notification_request.payload) {
+            return Err(NotiSrvError::InvalidDataField);
+        }
+
+        let recipient_type = notification_request
+            .recipient_type
+            .clone()
+            .unwrap_or_default();
+
+        match notification_request.channel {
+            NotificationChannel::Push => {
+                if recipient_type.is_empty() {
+                    return Err(NotiSrvError::InvalidDataField);
+                }
+            }
+            _ => (),
+        }
+
+        // Save notification into database
         let noti_id = self
             .noti_repo
             .insert(&notification_request)
@@ -35,13 +60,14 @@ impl NotificationService {
                 NotiSrvError::DatabaseError(e)
             })?;
 
-        // generate value
+        // Generate value
         let enqueue_value = NotificationEnQueue {
             notification_id: noti_id.clone(),
             recipient: notification_request.recipient,
-            channel: notification_request.channel,
+            recipient_type,
+            channel: notification_request.channel.to_string(),
             template_id: notification_request.template_id.unwrap_or_default(),
-            data: notification_request.data,
+            payload: notification_request.payload,
         };
 
         let job = serde_json::json!(enqueue_value);
@@ -51,7 +77,7 @@ impl NotificationService {
             NotiSrvError::MissingEnvError(e)
         })?;
 
-        // push job into redis queue
+        // Push job into redis queue
         let _push_result = self
             .redis_repo
             .push_to_queue(&queue_key, &job.to_string())
@@ -67,5 +93,13 @@ impl NotificationService {
         };
 
         Ok(response)
+    }
+
+    fn validate_payload(&self, channel: &NotificationChannel, payload: &Value) -> bool {
+        match channel {
+            NotificationChannel::Push => PushPayload::validate_payload(payload),
+            NotificationChannel::Email => EmailPayload::validate_payload(payload),
+            _ => false,
+        }
     }
 }

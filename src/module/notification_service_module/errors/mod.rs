@@ -14,6 +14,9 @@ pub enum NotiSrvError {
 
     #[display("Redis push failed")]
     RedisQueuePushError(PoolError),
+
+    #[display("Invalid data field")]
+    InvalidDataField,
 }
 
 impl ResponseError for NotiSrvError {
@@ -24,6 +27,10 @@ impl ResponseError for NotiSrvError {
                 .map_into_boxed_body(),
 
             NotiSrvError::RedisQueuePushError(_) => HttpResponse::InternalServerError()
+                .body(self.to_string())
+                .map_into_boxed_body(),
+
+            NotiSrvError::InvalidDataField => HttpResponse::InternalServerError()
                 .body(self.to_string())
                 .map_into_boxed_body(),
 

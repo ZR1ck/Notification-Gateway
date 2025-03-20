@@ -1,3 +1,4 @@
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 
 // pub struct Notification {
@@ -11,13 +12,25 @@ use serde::{Deserialize, Serialize};
 //     pub updated_at: String,
 // }
 
+#[derive(Debug, Deserialize, Serialize, Clone, Display)]
+#[serde(rename_all = "lowercase")]
+pub enum NotificationChannel {
+    #[display("push")]
+    Push,
+    #[display("email")]
+    Email,
+    #[display("sms")]
+    Sms,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct NotificationRequest {
     pub user_id: String,
     pub recipient: String,
-    pub channel: String,
+    pub recipient_type: Option<String>,
+    pub channel: NotificationChannel,
     pub template_id: Option<String>,
-    pub data: serde_json::Value,
+    pub payload: serde_json::Value,
 }
 
 #[derive(Debug, Serialize)]
@@ -30,7 +43,8 @@ pub struct NotificationResponse {
 pub struct NotificationEnQueue {
     pub notification_id: String,
     pub recipient: String,
+    pub recipient_type: String,
     pub channel: String,
     pub template_id: String,
-    pub data: serde_json::Value,
+    pub payload: serde_json::Value,
 }

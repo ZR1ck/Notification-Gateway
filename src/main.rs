@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use actix::Actor;
 use actix_web::{web, App, HttpServer};
 use config::{database::create_database_pool, redis::create_redis_pool};
 use dotenvy::dotenv;
@@ -39,18 +38,14 @@ async fn main() -> std::io::Result<()> {
 
     // init modules
     let noti_srv_module = NotiServiceModule::new(pg_pool.clone(), redis_pool.clone());
-    let noti_deliv_module = NotiDelivModule::new(pg_pool.clone(), redis_pool.clone());
-    let worker_addr = noti_deliv_module.queue_worker.start();
+    let noti_deliv_module = NotiDelivModule::new(pg_pool.clone(), redis_pool.clone()).await;
+    let _worker_addr = noti_deliv_module.queue_worker_addr;
 
     info!("Starting server...");
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(noti_srv_module.noti_controller.clone()))
-            .app_data(web::Data::new(
-                noti_deliv_module.queue_worker_controller.clone(),
-            ))
-            .app_data(web::Data::new(worker_addr.clone()))
             .configure(NotiServiceModule::routes_config)
             .configure(NotiDelivModule::routes_config)
     })

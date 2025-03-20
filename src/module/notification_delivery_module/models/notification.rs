@@ -1,10 +1,13 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct NotificationDeQueue {
     pub notification_id: String,
     pub recipient: String,
+    pub recipient_type: String,
     pub channel: String,
-    pub template_id: String,
-    pub data: serde_json::Value,
+    pub _template_id: String,
+    pub payload: serde_json::Value,
+    #[serde(default)]
+    pub retry_count: u8,
 }

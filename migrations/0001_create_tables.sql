@@ -4,7 +4,7 @@ CREATE TABLE Notification (
     recipient TEXT NOT NULL,
     channel TEXT CHECK(channel IN('email', 'push', 'sms')),
     template_id UUID,
-    status TEXT CHECK(status IN('pending', 'sent', 'faled')),
+    status TEXT CHECK(status IN('pending', 'sent', 'failed')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
