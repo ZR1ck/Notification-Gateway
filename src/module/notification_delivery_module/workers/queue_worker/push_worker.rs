@@ -6,7 +6,7 @@ use serde_json::json;
 
 use crate::module::notification_delivery_module::{
     errors::NotiDeliverError,
-    models::{notification::NotificationDeQueue, payload::PushPayload},
+    models::{notification::NotificationDeQueue, push_payload::PushPayload},
     repositories::notification_repository::NotificationRepo,
     utils::fcm_token_manager::TokenManager,
 };
@@ -65,10 +65,18 @@ impl NotificationWorker for PushWorker {
                 NotiDeliverError::JsonParseError
             })?;
 
+        let recipient_type = match notification.recipient_type.clone() {
+            Some(value) => value,
+            None => {
+                error!("Missing recipient_type");
+                return Err(NotiDeliverError::JsonParseError);
+            }
+        };
+
         // Construct the FCM request message
         let message = json!({
             "message": {
-                notification.recipient_type.clone(): notification.recipient.clone(),
+                recipient_type: notification.recipient.clone(),
                 "notification": {
                     "title": payload.title,
                     "body": payload.body

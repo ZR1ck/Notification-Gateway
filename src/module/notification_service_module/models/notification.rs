@@ -23,11 +23,23 @@ pub enum NotificationChannel {
     Sms,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone, Display)]
+#[serde(rename_all = "lowercase")]
+pub enum PushRecipientType {
+    #[display("token")]
+    Token,
+    #[display("topic")]
+    Topic,
+    #[display("condition")]
+    Condition,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct NotificationRequest {
     pub user_id: String,
     pub recipient: String,
-    pub recipient_type: Option<String>,
+    pub recipient_type: Option<PushRecipientType>,
+    pub sender: Option<String>,
     pub channel: NotificationChannel,
     pub template_id: Option<String>,
     pub payload: serde_json::Value,
@@ -43,8 +55,9 @@ pub struct NotificationResponse {
 pub struct NotificationEnQueue {
     pub notification_id: String,
     pub recipient: String,
-    pub recipient_type: String,
+    pub recipient_type: Option<String>,
+    pub sender: Option<String>,
     pub channel: String,
-    pub template_id: String,
+    pub template_id: Option<String>,
     pub payload: serde_json::Value,
 }

@@ -33,19 +33,27 @@ impl NotificationService {
     ) -> Result<NotificationResponse, NotiSrvError> {
         // Validate payload
         if !self.validate_payload(&notification_request.channel, &notification_request.payload) {
-            return Err(NotiSrvError::InvalidDataField);
+            return Err(NotiSrvError::InvalidDataField(
+                format!(
+                    "Missing required payload's field for {} channel",
+                    &notification_request.channel.to_string()
+                )
+                .into(),
+            ));
         }
 
         let recipient_type = notification_request
             .recipient_type
             .clone()
-            .unwrap_or_default();
+            .and_then(|value| Some(value.to_string()));
 
         match notification_request.channel {
             NotificationChannel::Push => {
-                if recipient_type.is_empty() {
-                    return Err(NotiSrvError::InvalidDataField);
-                }
+                if let None = recipient_type {
+                    return Err(NotiSrvError::InvalidDataField(
+                        "Missing required field 'recipient_type'".to_string().into(),
+                    ));
+                };
             }
             _ => (),
         }
@@ -66,8 +74,9 @@ impl NotificationService {
             recipient: notification_request.recipient,
             recipient_type,
             channel: notification_request.channel.to_string(),
-            template_id: notification_request.template_id.unwrap_or_default(),
+            template_id: notification_request.template_id,
             payload: notification_request.payload,
+            sender: notification_request.sender,
         };
 
         let job = serde_json::json!(enqueue_value);
