@@ -42,6 +42,7 @@ impl NotificationService {
             ));
         }
 
+        // Ensure each recipient type has its required field
         let recipient_type = notification_request
             .recipient_type
             .clone()
@@ -54,6 +55,17 @@ impl NotificationService {
                         "Missing required field 'recipient_type'".to_string().into(),
                     ));
                 };
+            }
+            NotificationChannel::Email => {
+                if notification_request
+                    .sender
+                    .clone()
+                    .map_or(true, |value| value.is_empty())
+                {
+                    return Err(NotiSrvError::InvalidDataField(
+                        "Missing required field 'sender'".to_string().into(),
+                    ));
+                }
             }
             _ => (),
         }

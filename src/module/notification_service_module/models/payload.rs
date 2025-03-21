@@ -14,7 +14,8 @@ pub struct EmailPayload;
 impl Payload for EmailPayload {
     fn validate_payload(payload: &Value) -> bool {
         payload.get("subject").map_or(false, |v| v.is_string())
-            && payload.get("message").map_or(false, |v| v.is_string())
+            && payload.get("content").map_or(false, |v| v.is_string())
+            && payload.get("content_type").map_or(true, |v| v.is_string())
             && payload.get("variables").map_or(true, |v| v.is_object())
     }
 }

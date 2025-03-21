@@ -1,2 +1,3 @@
+pub mod email_payload;
 pub mod notification;
-pub mod payload;
+pub mod push_payload;
