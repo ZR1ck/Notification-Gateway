@@ -97,6 +97,7 @@ impl NotificationWorker for PushWorker {
             // Attempt to send the notification
             match self.try_send(token.as_str(), &message).await {
                 Ok(response) => {
+                    // info!("FCM response: {:?}", response);
                     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
                         // Token expired, attempt to refresh
                         warn!("Token expired, refreshing token...");
@@ -114,15 +115,7 @@ impl NotificationWorker for PushWorker {
                         info!("Update row affected: {}", result);
                         return Ok(());
                     } else {
-                        // Failed to send notification, update status to "failed"
-                        let result = repo
-                            .update_notification_status(&notification.notification_id, "failed")
-                            .await
-                            .map_err(|e| {
-                                error!("Update error: {}", e);
-                                NotiDeliverError::DatabaseError(e)
-                            })?;
-                        info!("Update row affected: {}", result);
+                        // Failed to send notification
                         return Err(NotiDeliverError::RequestFailed);
                     }
                 }
